@@ -4,9 +4,10 @@ from django.views import View
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.contrib.auth.models import User
-
+from django.shortcuts import get_object_or_404
+from .models import Cart
 from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import make_password
+# from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 UserModel = get_user_model()
 
@@ -16,10 +17,16 @@ class LoginView(View):
         jd = json.loads(request.body)
         email = jd['email']
         password = jd['password']
-        print(email,password)
+        # print(email,password)
         user  = authenticate(username=email,password=password)
         if user is not None:
-            return HttpResponse("success", status=200)
+            user_data={
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                "avatar":user.avatar
+            }
+            return JsonResponse({"success":user_data}, status=200)
         else:
             return HttpResponse("login failed.", status=401)
         # return JsonResponse({"message":"success"})
@@ -32,4 +39,31 @@ class CreateUserView(View):
             email=jd['email'])
         user.set_password(jd['password'])
         user.save()
+        cart =  Cart.objects.create(user=user,products=[])
         return HttpResponse("success", status=200)
+
+class CartView(View):
+    def get(self,request,user_id):
+        cart = get_object_or_404(Cart, user_id=user_id)
+        response_data = {
+            'cart': cart.products
+        }
+        # print(response_data)
+        return JsonResponse(response_data)
+    
+    def put(self,request,user_id):
+        jd = json.loads(request.body)
+        cart = get_object_or_404(Cart, user_id=user_id)
+        cart.products=jd["cart"]
+        cart.save()
+        return HttpResponse("success", status=200)
+
+class UploadPhotoView(View):
+    def post(self,request,user_id):
+        jd = json.loads(request.body)
+        user = get_object_or_404(UserModel, id=user_id)
+        photo = jd['photo']
+        user.avatar = photo
+        user.save()
+        return HttpResponse("success", status=200)
+

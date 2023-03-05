@@ -3,10 +3,12 @@
 
 from django.urls import path
 # Create your models here.
-from .views import LoginView,CreateUserView
+from .views import LoginView,CreateUserView,CartView,UploadPhotoView
 from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
     path('login',csrf_exempt(LoginView.as_view()), name="login"),
     path('signup',csrf_exempt(CreateUserView.as_view()), name="login"),
+    path('cart/<int:user_id>',csrf_exempt(CartView.as_view()), name="cart"),
+    path('avatar/<int:user_id>',csrf_exempt(UploadPhotoView.as_view()), name="avatar"),
 ]
