@@ -1,11 +1,13 @@
 from django.shortcuts import render
 import json
+import stripe
+
 from django.views import View
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from .models import Cart
+from .models import Cart,Product
 from django.contrib.auth import authenticate
 # from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
@@ -50,7 +52,7 @@ class CartView(View):
         }
         # print(response_data)
         return JsonResponse(response_data)
-    
+
     def put(self,request,user_id):
         jd = json.loads(request.body)
         cart = get_object_or_404(Cart, user_id=user_id)
@@ -67,3 +69,23 @@ class UploadPhotoView(View):
         user.save()
         return HttpResponse("success", status=200)
 
+class ProductView(View):
+    def get(self,request):
+        products = list(Product.objects.values())
+        return JsonResponse({"products":products})
+stripe.api_key = "sk_test_51KjBqNA9KCn8yVMONc3gFAYwrG6HbwHVDeQ3sxLolr9K5iJHSXRmm8FXpkRFtJp7n5WWCjVjmCOlyHYObMnSVRlL00Y6KfPvVR"
+
+class CreatePayment(View):
+    def post(self,request):
+        jd = json.loads(request.body)
+        amount = jd["amount"]
+        currency = jd["currency"]
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency=currency,
+            payment_method_types=["card"],
+        )
+        client_secret = intent.client_secret
+        return JsonResponse({
+            "client_secret": client_secret
+        })
